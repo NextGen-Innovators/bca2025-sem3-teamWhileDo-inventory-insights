@@ -173,26 +173,7 @@ export function AppSidebar() {
             </div>
           </div>
           
-          {/* Quick Stats */}
-          <div className="mb-6">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Quick Stats
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Total Employees</span>
-                <span className="font-semibold">24</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Active Issues</span>
-                <span className="font-semibold text-orange-600">3</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">New Today</span>
-                <span className="font-semibold text-green-600">2</span>
-              </div>
-            </div>
-          </div>
+        
         </div>
 
         {/* Sidebar Footer */}

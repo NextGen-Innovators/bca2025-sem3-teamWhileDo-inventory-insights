@@ -27,15 +27,19 @@ async def startup():
 async def shutdown():
     await close_db()
 
-# Include routers
 app.include_router(users.router, prefix="/users", tags=["Users"])
 
-# Import and include Gmail router
 from app.routers import gmail
 app.include_router(gmail.router, prefix="/gmail", tags=["Gmail"])
 
 from app.routers import company
 app.include_router(company.router, prefix="/companies", tags=["Companies"])
+
+from app.routers import issues
+app.include_router(issues.router, prefix="/issues", tags=["Issues"])
+
+from app.routers import auth
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 @app.get("/")
 async def root():
