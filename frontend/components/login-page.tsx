@@ -16,12 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleAdminSubmit = () => {
-    if (email && password) {
-      console.log("Admin login:", email, password);
-      // Add your admin authentication logic here
-    }
-  };
+ 
 
   const handleEmployeeSubmit = () => {
     if (email && email) {
@@ -53,7 +48,7 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={()=>signIn()}
+                onClick={() => signIn("google", { callbackUrl: "/onboard" })}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path

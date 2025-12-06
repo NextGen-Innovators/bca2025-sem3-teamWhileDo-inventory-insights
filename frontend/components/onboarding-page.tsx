@@ -1,8 +1,7 @@
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,9 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import axios from "axios";
+import { useCreateCompany } from "@/lib/apis/useCompanies";
 
 export default function OnboardingPage() {
+  const { data: session, status } = useSession();
+  
+
+
   const [formData, setFormData] = useState({
+    user_id:'',
     name: "",
     email: "",
     description: "",
@@ -28,19 +35,76 @@ export default function OnboardingPage() {
     country: "",
   });
 
+
+useEffect(() => {
+  const user = session?.user;
+  if (!user) return;
+
+  setFormData(prev => ({
+    ...prev,
+    email: user.email ?? prev.email,
+    user_id: user.id ?? prev.user_id,
+  }));
+}, [session]);
+
+const {mutateAsync:createCompany}=useCreateCompany()
+
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (formData.name && formData.email) {
-      console.log(formData);
-      // Handle form submission here
+      console.log("Submitting form data:", formData);
+      
+      try {
+      createCompany(formData)
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        alert("Error submitting form. Please try again.");
+      }
     }
   };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">Access Denied</CardTitle>
+            <CardDescription>
+              Please sign in to access the onboarding page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full" 
+              onClick={() => window.location.href = '/api/auth/signin'}
+            >
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center p-4">
@@ -52,7 +116,7 @@ export default function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
                 Company Name <span className="text-red-500">*</span>
@@ -62,6 +126,7 @@ export default function OnboardingPage() {
                 placeholder="Enter your company name"
                 value={formData.name}
                 onChange={handleChange}
+                required
               />
             </div>
 
@@ -75,7 +140,15 @@ export default function OnboardingPage() {
                 placeholder="company@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                required
+                readOnly={!!session?.user?.email} // Make readonly if from session
+                className={session?.user?.email ? "bg-muted" : ""}
               />
+              {session?.user?.email && (
+                <p className="text-xs text-muted-foreground">
+                  Email from your account. Contact support to change.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -164,13 +237,13 @@ export default function OnboardingPage() {
             </div>
 
             <Button
-              onClick={handleSubmit}
+              type="submit"
               className="w-full"
               disabled={!formData.name || !formData.email}
             >
               Continue to Dashboard
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>

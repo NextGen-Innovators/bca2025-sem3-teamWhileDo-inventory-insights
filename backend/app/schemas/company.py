@@ -1,7 +1,15 @@
-from pydantic import BaseModel, EmailStr, HttpUrl
+from pydantic import BaseModel, EmailStr, HttpUrl, field_validator
 from typing import Optional, List
 from datetime import datetime
+from enum import Enum
 
+# User Role Enum
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
+    EMPLOYEE = "employee"
+
+# Company Schemas
 class CompanyCreate(BaseModel):
     name: str
     email: EmailStr
@@ -13,9 +21,7 @@ class CompanyCreate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
-    postal_code: Optional[str] = None
-    founded_year: Optional[int] = None
-    company_size: Optional[str] = None  # e.g., "1-10", "11-50", "51-200", etc.
+    user_id: str
     
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
@@ -28,9 +34,8 @@ class CompanyUpdate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
-    postal_code: Optional[str] = None
-    founded_year: Optional[int] = None
-    company_size: Optional[str] = None
+    is_active: Optional[bool] = None
+    
 
 class CompanyOut(BaseModel):
     id: str
@@ -44,15 +49,23 @@ class CompanyOut(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
-    postal_code: Optional[str] = None
-    founded_year: Optional[int] = None
-    company_size: Optional[str] = None
-    employee_count: Optional[int] = 0
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    employee_count: int = 0
+    is_active: bool = True
+    created_at: datetime
+    updated_at: datetime
+    user_id: str
+    
     
     class Config:
         from_attributes = True
+
+class EmployeeBasic(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    department: Optional[str] = None
+    position: Optional[str] = None
+    is_onboarded: bool = False
 
 class CompanyWithEmployees(BaseModel):
     id: str
@@ -66,13 +79,61 @@ class CompanyWithEmployees(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
-    postal_code: Optional[str] = None
-    founded_year: Optional[int] = None
-    company_size: Optional[str] = None
-    employee_count: Optional[int] = 0
-    employees: Optional[List[dict]] = []  # List of employee objects
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    employee_count: int = 0
+    is_active: bool = True
+    employees: List[EmployeeBasic] = []
+    created_at: datetime
+    updated_at: datetime
     
     class Config:
         from_attributes = True
+
+# User Schemas
+class GoogleUser(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    image: Optional[str] = None
+
+class TokenSave(BaseModel):
+    access_token: str
+    refresh_token: str
+    user: GoogleUser
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    role: UserRole = UserRole.USER
+    is_onboarded: bool = False
+
+class UserOut(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    role: UserRole
+    is_onboarded: bool
+    company_id: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class EmployeeCreate(BaseModel):
+    name: str
+    email: EmailStr
+    role: UserRole = UserRole.EMPLOYEE
+    department: Optional[str] = None
+    position: Optional[str] = None
+    company_id: str
+
+class EmployeeOut(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    role: UserRole
+    department: Optional[str] = None
+    position: Optional[str] = None
+    company_id: str
+    is_onboarded: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None

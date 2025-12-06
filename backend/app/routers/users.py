@@ -13,12 +13,12 @@ router = APIRouter()
 async def save_token(data: TokenSave):
     try:
         db = get_database()
-        print(f"📥 Received token save request for: {data.user.email}")
+        print(f"Received token save request for: {data.user.email}")
         
         existing_user = await db.users.find_one({"email": data.user.email})
         
         if existing_user:
-            print(f"🔄 Updating existing user: {data.user.email}")
+            print(f"Updating existing user: {data.user.email}")
             await db.users.update_one(
                 {"email": data.user.email},
                 {
@@ -28,13 +28,14 @@ async def save_token(data: TokenSave):
                         "name": data.user.name,
                         "google_id": data.user.id,
                         "image": data.user.image,
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.utcnow(),
+                        "is_onboarded": False
                     }
                 }
             )
             user_id = str(existing_user["_id"])
         else:
-            print(f"➕ Creating new user: {data.user.email}")
+            print(f" Creating new user: {data.user.email}")
             user_doc = {
                 "name": data.user.name,
                 "email": data.user.email,
@@ -44,7 +45,8 @@ async def save_token(data: TokenSave):
                 "refresh_token": data.refresh_token,
                 "role": UserRole.USER.value,
                 "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.utcnow(),
+                "is_onboarded": False
             }
             result = await db.users.insert_one(user_doc)
             user_id = str(result.inserted_id)
@@ -75,13 +77,15 @@ async def create_user(data: UserCreate):
     user = data.model_dump()
     user["created_at"] = datetime.utcnow()
     user["updated_at"] = datetime.utcnow()
+    user["is_onboarded"] = False
     result = await db.users.insert_one(user)
     
     return UserOut(
         id=str(result.inserted_id),
         name=user["name"],
         email=user["email"],
-        role=user["role"]
+        role=user["role"],
+        is_onboarded=user["is_onboarded"]
     )
 
 @router.post("/employees", response_model=EmployeeOut)
@@ -94,6 +98,7 @@ async def create_employee(data: EmployeeCreate):
     employee = data.model_dump()
     employee["created_at"] = datetime.utcnow()
     employee["updated_at"] = datetime.utcnow()
+    employee["is_onboarded"] = False
     result = await db.users.insert_one(employee)
     
     return EmployeeOut(
@@ -102,7 +107,8 @@ async def create_employee(data: EmployeeCreate):
         email=employee["email"],
         role=employee["role"],
         department=employee.get("department"),
-        position=employee.get("position")
+        position=employee.get("position"),
+        is_onboarded=employee["is_onboarded"]
     )
 
 @router.get("/users", response_model=list[UserOut])
@@ -114,7 +120,8 @@ async def get_all_users():
             id=str(u["_id"]),
             name=u["name"],
             email=u["email"],
-            role=u.get("role", UserRole.USER)
+            role=u.get("role", UserRole.USER),
+            is_onboarded=u.get("is_onboarded", False)
         ) 
         for u in users
     ]
@@ -129,7 +136,8 @@ async def get_users_by_role(role: UserRole):
             id=str(u["_id"]),
             name=u["name"],
             email=u["email"],
-            role=u["role"]
+            role=u["role"],
+            is_onboarded=u.get("is_onboarded", False)
         ) 
         for u in users
     ]
@@ -145,7 +153,8 @@ async def get_all_employees():
             email=e["email"],
             role=e["role"],
             department=e.get("department"),
-            position=e.get("position")
+            position=e.get("position"),
+            is_onboarded=e.get("is_onboarded", False)
         ) 
         for e in employees
     ]
@@ -162,7 +171,8 @@ async def get_user(user_id: str):
             id=str(user["_id"]),
             name=user["name"],
             email=user["email"],
-            role=user.get("role", UserRole.USER)
+            role=user.get("role", UserRole.USER),
+            is_onboarded=user.get("is_onboarded", False)
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid user ID")
@@ -178,7 +188,8 @@ async def get_user_by_email(email: str):
         id=str(user["_id"]),
         name=user["name"],
         email=user["email"],
-        role=user.get("role", UserRole.USER)
+        role=user.get("role", UserRole.USER),
+        is_onboarded=user.get("is_onboarded", False)
     )
 
 @router.patch("/users/{user_id}/role")

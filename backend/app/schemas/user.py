@@ -22,12 +22,14 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     role: UserRole = UserRole.USER
+    is_onboarded: bool = False
 
 class UserOut(BaseModel):
     id: str
     name: str
     email: EmailStr
     role: UserRole
+    is_onboarded: bool
 
 class EmployeeCreate(BaseModel):
     name: str

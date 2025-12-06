@@ -13,7 +13,7 @@ app = FastAPI(title="User Management API")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Next.js default port
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,6 +33,9 @@ app.include_router(users.router, prefix="/users", tags=["Users"])
 # Import and include Gmail router
 from app.routers import gmail
 app.include_router(gmail.router, prefix="/gmail", tags=["Gmail"])
+
+from app.routers import company
+app.include_router(company.router, prefix="/companies", tags=["Companies"])
 
 @app.get("/")
 async def root():

@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import axios from "axios";
+import { redirect } from "next/navigation";
 
 export const authOptions: any = {
   providers: [
@@ -57,6 +58,8 @@ export const authOptions: any = {
             }
           );
           
+
+         
         } catch (error: any) {
           console.error("❌ Failed to save token to FastAPI:");
           if (error.response) {
