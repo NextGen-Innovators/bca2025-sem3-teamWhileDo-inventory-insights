@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
-import { useDashboard } from "@/lib/context/dashboard-context";
+import { useDashboard } from "@/components/context/dashboard-context";
 
 export default function IssuesList() {
   const { issues, deleteIssue } = useDashboard();

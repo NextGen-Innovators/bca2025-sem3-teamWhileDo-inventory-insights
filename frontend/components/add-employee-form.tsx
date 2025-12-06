@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
-import { useDashboard } from "@/lib/context/dashboard-context";
+import { useDashboard } from "@/components/context/dashboard-context";
 
 interface AddEmployeeFormProps {
   onClose: () => void;
