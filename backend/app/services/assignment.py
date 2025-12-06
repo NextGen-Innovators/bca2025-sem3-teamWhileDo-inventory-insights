@@ -7,7 +7,10 @@ def assign_to_employee(
     email: str,
     email_id: Optional[str] = None,
     category: Optional[str] = None,
-    employees: Optional[List[Dict]] = None
+    employees: Optional[List[Dict]] = None,
+    category_response: Optional[str] = None,
+    classification_response: Optional[str] = None
+
 ) -> Dict:
     """
     Assigns an email to the most suitable employee based on their skills, specialties, and department.

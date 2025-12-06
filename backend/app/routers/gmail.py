@@ -6,6 +6,10 @@ import base64
 from email.mime.text import MIMEText
 
 from app.services.classification import classification
+from app.services.response import generate_inquiry_response
+from app.services.categorized import category
+from app.database import get_database
+from app.schemas.company import UserRole
 
 router = APIRouter()
 
@@ -59,6 +63,7 @@ def parse_email_message(msg_data: Dict, include_full_body: bool = False) -> Dict
 
 @router.get("/read-emails")
 async def read_emails(
+    company_id: str,
     authorization: str = Header(...),
     max_results: int = 10,
     full_raw: bool = False,
@@ -73,20 +78,43 @@ async def read_emails(
             label_ids.append("UNREAD")
 
         results = service.users().messages().list(
-            userId="me", 
+            userId="me",
             maxResults=min(max_results, 100),
-            labelIds=label_ids
+            labelIds=label_ids,
         ).execute()
 
         messages = results.get("messages", [])
 
+        # If a company_id is provided, fetch its employees and prepare a list of dicts
+        employees_list: list[Dict] = []
+        if company_id:
+            try:
+                db = get_database()
+                employees = await db.users.find({"company_id": company_id, "role": UserRole.EMPLOYEE.value}).to_list(200)
+                employees_list = [
+                    {
+                        "id": str(e.get("_id")),
+                        "name": e.get("name"),
+                        "email": e.get("email"),
+                        "department": e.get("department"),
+                        "position": e.get("position"),
+                    }
+                    for e in employees
+                ]
+            except Exception as e:
+                # Non-fatal: log and continue without employees
+                print(f"⚠️ Failed to load employees for company {company_id}: {e}")
+
         if not messages:
             return {
-                "user": user['email'],
+                "user": user["email"],
                 "messages": [],
+                "employees": employees_list,
                 "count": 0,
-                "message": f"No {'unread ' if unread_only else ''}emails found"
+                "message": f"No {'unread ' if unread_only else ''}emails found",
             }
+            
+            
 
         detailed_messages = []
 
@@ -95,39 +123,80 @@ async def read_emails(
                 msg_data = service.users().messages().get(
                     userId="me",
                     id=msg["id"],
-                    format="full"
+                    format="full",
                 ).execute()
 
-                # Parse structured email
+                if full_raw:
+                    detailed_messages.append(msg_data)
+                    continue
+
                 parsed = parse_email_message(msg_data, include_full_body=True)
 
-                # ----- 🔥 CLASSIFY EMAIL BODY -----
-                email_text = parsed["body"]
-                classification_result = classification(email_text)
+                email_text = (
+                    f"From: {parsed['from']}\n"
+                    f"Subject: {parsed['subject']}\n\n"
+                    f"{parsed['body']}"
+                )
 
-                print("\n📌 CLASSIFICATION RESULT:", classification_result)
+                try:
+                    classification_result = classification(email=email_text, email_id=parsed["id"])
+                    print("\n📌 CLASSIFICATION RESULT:", classification_result)
+                    parsed["classification"] = classification_result
+                    classification_type = classification_result['classification']
 
-                # attach classification result to response
-                parsed["classification"] = classification_result
+                    if classification_type in ('none', 'spam'):
+                       
+                        continue 
+
+                    elif classification_type == 'inquiry':
+                        response_result = generate_inquiry_response(
+                            email=email_text,
+                            email_id=parsed["id"],
+                            category=classification_type,
+                            context=None,
+                            tone="professional"
+                        )
+                        parsed["response"] = response_result
+                        print("\n🤖 GENERATED RESPONSE:", response_result)
+                    elif classification_type == 'ticket':
+                        category_result = category(
+                            email=email_text,
+                            email_id=parsed["id"],
+                            allow_new_categories=True
+                        )
+                        parsed["ticket_category"] = category_result
+                        print("\n🤖 GENERATED RESPONSE:", category_result)
+                        
+                except Exception as e:
+                    print(f"⚠️ Classification failed for {msg['id']}: {e}")
 
                 detailed_messages.append(parsed)
-
+                print(f"✅ Fetched email {parsed['id']} for {user['email']}")
+                
+            except HTTPException:
+                raise
             except Exception as e:
                 print(f"⚠️ Error processing message {msg['id']}: {str(e)}")
                 continue
 
+                
+                
         return {
-            "user": user['email'],
+            "user": user["email"],
             "messages": detailed_messages,
+            "employees": employees_list,
             "count": len(detailed_messages),
             "total_in_inbox": len(messages),
-            "unread_only": unread_only
+            "unread_only": unread_only,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"❌ Error reading emails: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to read emails: {str(e)}")
-
 @router.post("/send-email")
 async def send_email(
     data: EmailData,

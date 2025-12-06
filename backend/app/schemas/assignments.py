@@ -12,11 +12,9 @@ class AssignmentSource(str, Enum):
 
 
 class AssignmentStatus(str, Enum):
-    ASSIGNED = "assigned"
+    TODO = "todo"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
-    REASSIGNED = "reassigned"
-    CANCELLED = "cancelled"
 
 
 class AssignmentCreate(BaseModel):
@@ -46,7 +44,7 @@ class AssignmentOut(BaseModel):
     message: str
     category: Optional[str] = None
     priority: Optional[str] = None
-    status: AssignmentStatus = AssignmentStatus.ASSIGNED
+    status: AssignmentStatus = AssignmentStatus.TODO
     source: AssignmentSource
     created_at: datetime
     updated_at: datetime

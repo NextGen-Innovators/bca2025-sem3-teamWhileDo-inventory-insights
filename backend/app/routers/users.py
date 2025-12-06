@@ -140,7 +140,6 @@ async def get_all_users():
 
 @router.get("/users/role/{role}", response_model=list[UserOut])
 async def get_users_by_role(role: UserRole):
-    """Get users filtered by role"""
     db = get_database()
     users = await db.users.find({"role": role}).to_list(200)
     return [

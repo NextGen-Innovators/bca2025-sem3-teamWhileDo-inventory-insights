@@ -39,6 +39,7 @@ class IssueCreate(BaseModel):
     attachments: Optional[List[HttpUrl]] = []
     source: IssueSource = IssueSource.EMAIL
     assigned_to:str
+    emailId:Optional[str] = None
 
 
 class IssueUpdate(BaseModel):

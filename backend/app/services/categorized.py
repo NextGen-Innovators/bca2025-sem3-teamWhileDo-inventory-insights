@@ -3,7 +3,7 @@ from typing import Dict, Optional, List
 from ..ai import brain
 
 
-def category(email: str, email_id: Optional[str] = None, categories: Optional[List[str]] = None, allow_new_categories: bool = False) -> Dict:
+def category(email: str, email_id: Optional[str] = None, categories: Optional[List[str]] = None, allow_new_categories: bool = True) -> Dict:
     """
     Categorizes an email into different sectors like billing, docs, support, etc.
     
@@ -272,4 +272,3 @@ def categorize_batch(
         List of categorization results
     """
     return [category(email, email_id, categories, allow_new_categories) for email, email_id in emails]
-

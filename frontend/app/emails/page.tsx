@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { signOut } from "next-auth/react";
+import { useGetUser } from "@/lib/apis/useUser";
 interface Email {
   id: string;
   subject: string;
@@ -27,15 +28,15 @@ export default function GmailComponent() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
-  
+    const { data: user, isLoading: isLoadingUser } = useGetUser(session?.user?.id || "");
   const [emailForm, setEmailForm] = useState({
     to: "",
     subject: "",
     body: "",
   });
-
+console.log(user?.company_id)
   // API base URL
-  const API_BASE_URL = "http://localhost:8000/gmail";
+  const API_BASE_URL = `http://localhost:8000/gmail`;
 
 const handleLogout = async () => {
   await signOut({ callbackUrl: "/" });
@@ -73,6 +74,7 @@ const handleLogout = async () => {
         headers: getAuthHeaders(),
         params: {
           max_results: 20,
+          company_id:user?.company_id
         },
       });
 
@@ -85,7 +87,6 @@ const handleLogout = async () => {
     }
   };
 
-  // Send email
   const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -202,7 +203,7 @@ const handleLogout = async () => {
     if (session?.access_token) {
       fetchEmails();
     }
-  }, [session?.access_token]);
+  }, [session?.access_token,user?.company_id]);
 
   if (!session) {
     return (
