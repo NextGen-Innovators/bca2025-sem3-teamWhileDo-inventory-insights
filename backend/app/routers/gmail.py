@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Query
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Dict, List
 from app.services.gmail import get_gmail_service
 import base64
 from email.mime.text import MIMEText
@@ -12,34 +12,67 @@ class EmailData(BaseModel):
     subject: str
     body: str
 
-class EmailListQuery(BaseModel):
-    max_results: int = 10
+
+def extract_headers(msg_data: Dict) -> Dict[str, str]:
+    headers = msg_data["payload"]["headers"]
+    return {h["name"]: h["value"] for h in headers}
+
+def extract_body(msg_data: Dict) -> str:
+    payload = msg_data["payload"]
+    body = ""
+    
+    if "parts" in payload:
+        for part in payload["parts"]:
+            if part["mimeType"] == "text/plain" and "data" in part["body"]:
+                body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
+                break
+            elif part["mimeType"] == "text/html" and "data" in part["body"] and not body:
+                body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
+    elif "body" in payload and "data" in payload["body"]:
+        body = base64.urlsafe_b64decode(payload["body"]["data"]).decode("utf-8")
+    
+    return body
+
+def parse_email_message(msg_data: Dict, include_full_body: bool = False) -> Dict:
+    headers = extract_headers(msg_data)
+    body = extract_body(msg_data)
+    
+    if not include_full_body and len(body) > 1000:
+        body = body[:1000] + "..."
+    
+    return {
+        "id": msg_data["id"],
+        "subject": headers.get("Subject", "No Subject"),
+        "from": headers.get("From", "Unknown"),
+        "date": headers.get("Date", "Unknown"),
+        "snippet": msg_data.get("snippet", ""),
+        "body": body,
+        "is_unread": "UNREAD" in msg_data.get("labelIds", [])
+    }
+
 
 @router.get("/read-emails")
 async def read_emails(
     authorization: str = Header(..., description="Bearer token from session"),
     max_results: int = 10,
-    full_raw: bool = False  # New parameter to control raw data
+    full_raw: bool = False,
+    unread_only: bool = Query(True, description="Filter for unread emails only")  
 ):
-    """
-    Read emails from inbox
-    - full_raw=False: Returns parsed email data (subject, from, date, body)
-    - full_raw=True: Returns complete raw Gmail API response
-    """
     try:
-        if authorization.startswith("Bearer "):
-            access_token = authorization.replace("Bearer ", "")
-        else:
-            access_token = authorization
+        access_token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
         
         service, user = await get_gmail_service(access_token=access_token)
         
-        print(f" Fetching {max_results} emails for: {user['email']}")
+        print(f"📧 Fetching {max_results} {'unread ' if unread_only else ''}emails for: {user['email']}")
+        
+        label_ids = ["INBOX"]
+        if unread_only:
+            label_ids.append("UNREAD")
         
         results = service.users().messages().list(
             userId="me", 
-            maxResults=min(max_results, 100),  # Changed from 1 to 100
-            labelIds=["INBOX"]
+            maxResults=min(max_results, 100),
+            labelIds=label_ids
         ).execute()
         
         messages = results.get("messages", [])
@@ -49,72 +82,36 @@ async def read_emails(
                 "user": user['email'],
                 "messages": [],
                 "count": 0,
-                "message": "No emails found"
+                "message": f"No {'unread ' if unread_only else ''}emails found"
             }
         
         detailed_messages = []
         
-        if full_raw:
-            # Return complete raw data
-            for msg in messages:
-                try:
-                    msg_data = service.users().messages().get(
-                        userId="me", 
-                        id=msg["id"], 
-                        format="full"
-                    ).execute()
-                    
-                    # Append entire raw message object
+        for msg in messages:
+            try:
+                msg_data = service.users().messages().get(
+                    userId="me", 
+                    id=msg["id"], 
+                    format="full"
+                ).execute()
+                
+                if full_raw:
                     detailed_messages.append(msg_data)
+                else:
+                    detailed_messages.append(parse_email_message(msg_data, include_full_body=True))
                     
-                except Exception as e:
-                    print(f"⚠️ Error processing message {msg['id']}: {str(e)}")
-                    continue
-        else:
-            # Return parsed data with extracted fields
-            for msg in messages:
-                try:
-                    msg_data = service.users().messages().get(
-                        userId="me", 
-                        id=msg["id"], 
-                        format="full"
-                    ).execute()
-                    
-                    headers = msg_data["payload"]["headers"]
-                    subject = next((h["value"] for h in headers if h["name"] == "Subject"), "No Subject")
-                    sender = next((h["value"] for h in headers if h["name"] == "From"), "Unknown")
-                    date = next((h["value"] for h in headers if h["name"] == "Date"), "Unknown")
-                    
-                    body = ""
-                    if "parts" in msg_data["payload"]:
-                        for part in msg_data["payload"]["parts"]:
-                            if part["mimeType"] == "text/plain" and "data" in part["body"]:
-                                body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
-                                break
-                            elif part["mimeType"] == "text/html" and "data" in part["body"] and not body:
-                                body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
-                    elif "body" in msg_data["payload"] and "data" in msg_data["payload"]["body"]:
-                        body = base64.urlsafe_b64decode(msg_data["payload"]["body"]["data"]).decode("utf-8")
-                    
-                    detailed_messages.append({
-                        "id": msg["id"],
-                        "subject": subject,
-                        "from": sender,
-                        "date": date,
-                        "snippet": msg_data.get("snippet", ""),
-                        "body": body[:1000] + "..." if len(body) > 1000 else body
-                    })
-                except Exception as e:
-                    print(f"⚠️ Error processing message {msg['id']}: {str(e)}")
-                    continue
+            except Exception as e:
+                print(f"⚠️ Error processing message {msg['id']}: {str(e)}")
+                continue
         
-        print(f"✅ Retrieved {len(detailed_messages)} emails for: {user['email']}")
+        print(f"✅ Retrieved {(detailed_messages)} {'unread ' if unread_only else ''}emails")
         
         return {
             "user": user['email'],
             "messages": detailed_messages,
             "count": len(detailed_messages),
-            "total_in_inbox": len(messages)
+            "total_in_inbox": len(messages),
+            "unread_only": unread_only
         }
     
     except HTTPException:
@@ -124,7 +121,9 @@ async def read_emails(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to read emails: {str(e)}")
-
+    
+    
+    
 @router.post("/send-email")
 async def send_email(
     data: EmailData,
