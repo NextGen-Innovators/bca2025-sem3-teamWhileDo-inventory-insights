@@ -5,7 +5,10 @@ from app.services.gmail import get_gmail_service
 import base64
 from email.mime.text import MIMEText
 
+from app.services.classification import classification
+
 router = APIRouter()
+
 
 class EmailData(BaseModel):
     to: EmailStr
@@ -16,6 +19,7 @@ class EmailData(BaseModel):
 def extract_headers(msg_data: Dict) -> Dict[str, str]:
     headers = msg_data["payload"]["headers"]
     return {h["name"]: h["value"] for h in headers}
+
 
 def extract_body(msg_data: Dict) -> str:
     payload = msg_data["payload"]
@@ -28,10 +32,12 @@ def extract_body(msg_data: Dict) -> str:
                 break
             elif part["mimeType"] == "text/html" and "data" in part["body"] and not body:
                 body = base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8")
+
     elif "body" in payload and "data" in payload["body"]:
         body = base64.urlsafe_b64decode(payload["body"]["data"]).decode("utf-8")
     
     return body
+
 
 def parse_email_message(msg_data: Dict, include_full_body: bool = False) -> Dict:
     headers = extract_headers(msg_data)
@@ -53,30 +59,27 @@ def parse_email_message(msg_data: Dict, include_full_body: bool = False) -> Dict
 
 @router.get("/read-emails")
 async def read_emails(
-    authorization: str = Header(..., description="Bearer token from session"),
+    authorization: str = Header(...),
     max_results: int = 10,
     full_raw: bool = False,
-    unread_only: bool = Query(True, description="Filter for unread emails only")  
+    unread_only: bool = Query(True)
 ):
     try:
         access_token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
-        
         service, user = await get_gmail_service(access_token=access_token)
-        
-        print(f"📧 Fetching {max_results} {'unread ' if unread_only else ''}emails for: {user['email']}")
-        
+
         label_ids = ["INBOX"]
         if unread_only:
             label_ids.append("UNREAD")
-        
+
         results = service.users().messages().list(
             userId="me", 
             maxResults=min(max_results, 100),
             labelIds=label_ids
         ).execute()
-        
+
         messages = results.get("messages", [])
-        
+
         if not messages:
             return {
                 "user": user['email'],
@@ -84,28 +87,35 @@ async def read_emails(
                 "count": 0,
                 "message": f"No {'unread ' if unread_only else ''}emails found"
             }
-        
+
         detailed_messages = []
-        
+
         for msg in messages:
             try:
                 msg_data = service.users().messages().get(
-                    userId="me", 
-                    id=msg["id"], 
+                    userId="me",
+                    id=msg["id"],
                     format="full"
                 ).execute()
-                
-                if full_raw:
-                    detailed_messages.append(msg_data)
-                else:
-                    detailed_messages.append(parse_email_message(msg_data, include_full_body=True))
-                    
+
+                # Parse structured email
+                parsed = parse_email_message(msg_data, include_full_body=True)
+
+                # ----- 🔥 CLASSIFY EMAIL BODY -----
+                email_text = parsed["body"]
+                classification_result = classification(email_text)
+
+                print("\n📌 CLASSIFICATION RESULT:", classification_result)
+
+                # attach classification result to response
+                parsed["classification"] = classification_result
+
+                detailed_messages.append(parsed)
+
             except Exception as e:
                 print(f"⚠️ Error processing message {msg['id']}: {str(e)}")
                 continue
-        
-        print(f"✅ Retrieved {(detailed_messages)} {'unread ' if unread_only else ''}emails")
-        
+
         return {
             "user": user['email'],
             "messages": detailed_messages,
@@ -113,17 +123,11 @@ async def read_emails(
             "total_in_inbox": len(messages),
             "unread_only": unread_only
         }
-    
-    except HTTPException:
-        raise
+
     except Exception as e:
         print(f"❌ Error reading emails: {str(e)}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to read emails: {str(e)}")
-    
-    
-    
+
 @router.post("/send-email")
 async def send_email(
     data: EmailData,

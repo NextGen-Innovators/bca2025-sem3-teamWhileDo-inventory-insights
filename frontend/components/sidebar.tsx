@@ -15,73 +15,49 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter, usePathname } from "next/navigation";
 
-interface AppSidebarProps {
-  activePage: string;
-  onPageChange: (page: string) => void;
-  userName?: string | null;
-  userEmail?: string | null;
-  className?: string;
-}
-
-export function AppSidebar({ 
-  activePage, 
-  onPageChange, 
-  userName = "Admin User",
-  userEmail = "admin@company.com",
-  className = "" 
-}: AppSidebarProps) {
+export function AppSidebar() {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const { data: session } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const menuItems = [
     {
       title: "Dashboard",
       icon: Home,
-      page: "dashboard",
+      page: "/dashboard",
     },
     {
       title: "Employees",
       icon: Users,
-      page: "employees",
+      page: "/employees",
       badge: "24",
     },
     {
       title: "Create Employee",
       icon: UserPlus,
-      page: "create-employee",
-      variant: "default" as const,
+      page: "/create-employee",
     },
     {
       title: "Issues",
       icon: AlertCircle,
-      page: "issues",
+      page: "/issues",
       badge: "3",
     },
     {
       title: "Settings",
       icon: Settings,
-      page: "settings",
+      page: "/settings",
     },
   ];
 
-  // Get initials from name
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -91,119 +67,150 @@ export function AppSidebar({
       .slice(0, 2);
   };
 
+  const userName = session?.user?.name || "Admin User";
+  const userEmail = session?.user?.email || "admin@company.com";
+  const userImage = session?.user?.image;
+
+  const handleNavigation = (page: string) => {
+    router.push(page);
+    setIsMobileOpen(false);
+  };
+
+  // Close mobile menu on route change
+  React.useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
   return (
     <>
       {/* Mobile Toggle Button */}
       <Button
         variant="outline"
         size="icon"
-        className="md:hidden fixed top-4 left-4 z-50"
+        className="md:hidden fixed top-4 left-4 z-50 bg-white shadow-sm"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
-        {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
 
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <Sidebar
-        className={`border-r bg-white ${className} ${
-          isMobileOpen
-            ? "fixed inset-y-0 left-0 z-40 w-64 translate-x-0"
-            : "hidden md:flex md:w-64"
-        }`}
+      <aside
+        className={`
+          fixed md:sticky top-0 left-0 z-50 md:z-0
+          h-screen w-64 
+          bg-white border-r
+          flex flex-col
+          transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
       >
-        <SidebarHeader className="border-b p-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">HR</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold">HR Dashboard</h1>
-              <p className="text-xs text-gray-500">Company Portal</p>
-            </div>
+        {/* Sidebar Header */}
+        <div className="border-b p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">HR Portal</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMobileOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
+              className="pl-9"
             />
           </div>
-        </SidebarHeader>
+        </div>
 
-        <SidebarContent className="p-4">
-          <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.page}>
-                    <SidebarMenuButton
-                      isActive={activePage === item.page}
-                      onClick={() => {
-                        onPageChange(item.page);
-                        setIsMobileOpen(false);
-                      }}
-                      variant={item.variant}
-                      className="justify-start"
-                    >
-                      <item.icon className="h-4 w-4 mr-2" />
-                      {item.title}
-                      {item.badge && (
-                        <Badge
-                          variant="secondary"
-                          className="ml-auto"
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        {/* Sidebar Content */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          {/* Navigation */}
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Navigation
+            </h3>
+            <div className="space-y-1">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.page;
+                return (
+                  <button
+                    key={item.page}
+                    onClick={() => handleNavigation(item.page)}
+                    className={`w-full flex items-center justify-between p-2 rounded-md text-sm transition-colors ${
+                      isActive 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : 'hover:bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <item.icon className={`h-4 w-4 mr-3 ${isActive ? 'text-blue-700' : 'text-gray-600'}`} />
+                      <span>{item.title}</span>
+                    </div>
+                    {item.badge && (
+                      <Badge variant="secondary" className="ml-2">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           
           {/* Quick Stats */}
-          <SidebarGroup className="mt-6">
-            <SidebarGroupLabel>Quick Stats</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Employees</span>
-                  <span className="font-semibold">24</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Active Issues</span>
-                  <span className="font-semibold text-orange-600">3</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">New Today</span>
-                  <span className="font-semibold text-green-600">2</span>
-                </div>
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Quick Stats
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Total Employees</span>
+                <span className="font-semibold">24</span>
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter className="p-4 border-t">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Avatar>
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-blue-100 text-blue-800">
-                  {getInitials(userName || "AU")}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium">{userName}</p>
-                <p className="text-xs text-gray-500">{userEmail}</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Active Issues</span>
+                <span className="font-semibold text-orange-600">3</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">New Today</span>
+                <span className="font-semibold text-green-600">2</span>
               </div>
             </div>
-            <div className="flex items-center space-x-1">
+          </div>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="border-t p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
+              <Avatar className="flex-shrink-0">
+                <AvatarImage src={userImage || ""} alt={userName} />
+                <AvatarFallback className="bg-blue-100 text-blue-800">
+                  {getInitials(userName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{userName}</p>
+                <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
               <Button variant="ghost" size="icon">
                 <Bell className="h-4 w-4" />
               </Button>
@@ -216,16 +223,8 @@ export function AppSidebar({
               </Button>
             </div>
           </div>
-        </SidebarFooter>
-      </Sidebar>
-
-      {/* Overlay for mobile */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
-      )}
+        </div>
+      </aside>
     </>
   );
 }

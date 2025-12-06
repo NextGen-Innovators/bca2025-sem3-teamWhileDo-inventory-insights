@@ -1,8 +1,12 @@
+import AdminDashboard from '@/components/admin-dashboard'
 import React from 'react'
-import DashboardRoot from '@/components/dashboard-root'
 
 const page = () => {
-  return <DashboardRoot />
+  return (
+    <div>
+      <AdminDashboard/>
+    </div>
+  )
 }
 
 export default page

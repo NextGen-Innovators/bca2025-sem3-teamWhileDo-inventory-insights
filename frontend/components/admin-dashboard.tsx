@@ -16,9 +16,6 @@ import { useSession } from "next-auth/react";
 import { useGetUser } from "@/lib/apis/useUser";
 
 export default function AdminDashboard() {
-  const [showAddEmployee, setShowAddEmployee] = useState(false);
- const { data: session, status } = useSession();
-    const { data: user, isLoading: isLoadingUser } = useGetUser(session?.user?.id || "");
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,34 +41,7 @@ export default function AdminDashboard() {
             <IssuesList />
           </div>
 
-          {/* Add Employee Section */}
-          <div>
-            {!showAddEmployee ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Team Management</CardTitle>
-                  <CardDescription>Add new team members</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    onClick={() => setShowAddEmployee(true)}
-                    className="w-full"
-                  >
-                    Add Employee
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add New Employee</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AddEmployeeForm companyId={user.company_id || ''} onClose={() => setShowAddEmployee(false) } />
-                </CardContent>
-              </Card>
-            )}
-          </div>
+       
         </div>
       </main>
     </div>
