@@ -1,7 +1,6 @@
 from bytez import Bytez
 from dotenv import load_dotenv
 import os
-import json
 
 load_dotenv()
 key = os.getenv("BYTEZ_KEY")
@@ -41,16 +40,5 @@ def brain(prompt: str):
         print(f"Response: {resp}")
         return str(resp)
 
-
-email = """
-Hello,
-
-We offer bulk SEO packages for only $29/month.
-Grow your business with our promotional services.
-Best regards,
-SEO Boost Team
-"""
-
-print(classification(email))
 
 

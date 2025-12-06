@@ -1,11 +1,7 @@
-import sys
-import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app.services.tasks import classification
+from backend.app.services.classification import classification
 
-# Test email 1: Spam
 spam_email = """
 Hello,
 
