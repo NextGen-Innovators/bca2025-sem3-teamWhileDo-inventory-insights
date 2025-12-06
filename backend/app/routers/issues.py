@@ -74,6 +74,42 @@ async def get_all_issues(
         # Get issues with pagination
         issues = await db.issues.find(query_filter).skip(skip).limit(limit).to_list(length=limit)
         
+        # Collect all unique assigned_to IDs
+        assigned_user_ids = set()
+        for issue in issues:
+            if issue.get("assigned_to"):
+                assigned_user_ids.add(issue["assigned_to"])
+        
+        # Fetch all assigned users in one query
+        assigned_users = {}
+        if assigned_user_ids:
+            # Convert string IDs to ObjectId for querying
+            object_ids = []
+            for uid in assigned_user_ids:
+                try:
+                    object_ids.append(ObjectId(uid))
+                except:
+                    # Skip invalid ObjectId formats
+                    continue
+            
+            if object_ids:
+                users = await db.users.find({
+                    "_id": {"$in": object_ids}
+                }).to_list(1000)
+                
+                # Create mapping using string IDs as keys (matching issue format)
+                for user in users:
+                    user_id = str(user["_id"])
+                    assigned_users[user_id] = {
+                        "id": user_id,
+                        "name": user.get("name"),
+                        "email": user.get("email"),
+                        "department": user.get("department"),
+                        "position": user.get("position"),
+                        "skills": user.get("skills", []),
+                        "tags": user.get("tags", []),
+                    }
+        
         # Convert ObjectId to string and create JSON-serializable dicts
         result = []
         for issue in issues:
@@ -81,6 +117,15 @@ async def get_all_issues(
             if "_id" in issue_dict:
                 issue_dict["id"] = str(issue_dict["_id"])
                 del issue_dict["_id"]  # Remove _id to avoid duplication
+            
+            # Add assigned user information if available
+            assigned_to_id = issue_dict.get("assigned_to")
+            if assigned_to_id and assigned_to_id in assigned_users:
+                issue_dict["assigned_user"] = assigned_users[assigned_to_id]
+            elif assigned_to_id:
+                # User not found, but keep the ID
+                issue_dict["assigned_user"] = None
+            
             result.append(issue_dict)
         
         return {

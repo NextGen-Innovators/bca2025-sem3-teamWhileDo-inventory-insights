@@ -11,11 +11,22 @@ import {
 } from "@/components/ui/card";
 import { LogOut } from "lucide-react";
 import IssuesList from "./issues-list";
+import EmailsList from "./EmailsList"; // Add this import
 import AddEmployeeForm from "./add-employee-form";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useGetUser } from "@/lib/apis/useUser";
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
+  const { data: user, isLoading: isLoadingUser } = useGetUser(session?.user?.id || "");
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
+  if (isLoadingUser) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,10 +34,14 @@ export default function AdminDashboard() {
       <header className="border-b border-border bg-card">
         <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{}</h1>
-            <p className="text-sm text-muted-foreground">{}</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {user?.company_name || "Admin Dashboard"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Welcome, {user?.name || "Admin"}
+            </p>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
             Logout
           </Button>
@@ -41,7 +56,12 @@ export default function AdminDashboard() {
             <IssuesList />
           </div>
 
-       
+          {/* Sidebar */}
+          <div>
+          <EmailsList /> {/* Add this component */}
+
+            {/* You can add more sidebar components here */}
+          </div>
         </div>
       </main>
     </div>

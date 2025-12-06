@@ -246,7 +246,6 @@ async def read_emails(
                 "messages": [],
                 "employees": employees_list,
                 "company": company_info,
-                "count": 0,
                 "message": f"No {'unread ' if unread_only else ''}emails found",
             }
 
