@@ -1,10 +1,20 @@
 from fastapi import FastAPI
 from app.database import connect_db, close_db
-from app.routers import users, emails
+from app.routers import users
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+import json
+import os
+import base64
+from email.mime.text import MIMEText
+import base64
 
 app = FastAPI()
 
-# ==== DB Events ====
 @app.on_event("startup")
 async def startup():
     await connect_db()
@@ -15,7 +25,6 @@ async def shutdown():
 
 # ==== Routers ====
 app.include_router(users.router, prefix="/users", tags=["Users"])
-app.include_router(emails.router, prefix="/emails", tags=["Emails"])
 
 @app.get("/")
 async def root():
