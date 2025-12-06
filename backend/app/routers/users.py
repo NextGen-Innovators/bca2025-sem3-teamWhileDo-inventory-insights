@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from app.database import db
+from datetime import datetime
+from app.database import get_database
 from app.schemas.user import (
     UserCreate, UserOut, TokenSave, 
     EmployeeCreate, EmployeeOut, UserRole
@@ -11,9 +12,13 @@ router = APIRouter()
 @router.post("/save-token")
 async def save_token(data: TokenSave):
     try:
+        db = get_database()
+        print(f"📥 Received token save request for: {data.user.email}")
+        
         existing_user = await db.users.find_one({"email": data.user.email})
         
         if existing_user:
+            print(f"🔄 Updating existing user: {data.user.email}")
             await db.users.update_one(
                 {"email": data.user.email},
                 {
@@ -22,38 +27,54 @@ async def save_token(data: TokenSave):
                         "refresh_token": data.refresh_token,
                         "name": data.user.name,
                         "google_id": data.user.id,
+                        "image": data.user.image,
+                        "updated_at": datetime.utcnow()
                     }
                 }
             )
             user_id = str(existing_user["_id"])
         else:
+            print(f"➕ Creating new user: {data.user.email}")
             user_doc = {
                 "name": data.user.name,
                 "email": data.user.email,
                 "google_id": data.user.id,
+                "image": data.user.image,
                 "access_token": data.access_token,
                 "refresh_token": data.refresh_token,
-                "role": UserRole.USER,
+                "role": UserRole.USER.value,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
             }
             result = await db.users.insert_one(user_doc)
             user_id = str(result.inserted_id)
         
+        print(f"✅ Token saved successfully for user: {user_id}")
         return {
             "message": "Token saved successfully",
             "user_id": user_id,
             "email": data.user.email
         }
     
+    except RuntimeError as e:
+        print(f"❌ Database not initialized: {str(e)}")
+        raise HTTPException(status_code=503, detail="Database connection not available")
     except Exception as e:
+        print(f"❌ Error saving token: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to save token: {str(e)}")
 
 @router.post("/users", response_model=UserOut)
 async def create_user(data: UserCreate):
+    db = get_database()
     existing = await db.users.find_one({"email": data.email})
     if existing:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     
     user = data.model_dump()
+    user["created_at"] = datetime.utcnow()
+    user["updated_at"] = datetime.utcnow()
     result = await db.users.insert_one(user)
     
     return UserOut(
@@ -65,11 +86,14 @@ async def create_user(data: UserCreate):
 
 @router.post("/employees", response_model=EmployeeOut)
 async def create_employee(data: EmployeeCreate):
+    db = get_database()
     existing = await db.users.find_one({"email": data.email})
     if existing:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     
     employee = data.model_dump()
+    employee["created_at"] = datetime.utcnow()
+    employee["updated_at"] = datetime.utcnow()
     result = await db.users.insert_one(employee)
     
     return EmployeeOut(
@@ -83,6 +107,7 @@ async def create_employee(data: EmployeeCreate):
 
 @router.get("/users", response_model=list[UserOut])
 async def get_all_users():
+    db = get_database()
     users = await db.users.find().to_list(200)
     return [
         UserOut(
@@ -97,6 +122,7 @@ async def get_all_users():
 @router.get("/users/role/{role}", response_model=list[UserOut])
 async def get_users_by_role(role: UserRole):
     """Get users filtered by role"""
+    db = get_database()
     users = await db.users.find({"role": role}).to_list(200)
     return [
         UserOut(
@@ -110,6 +136,7 @@ async def get_users_by_role(role: UserRole):
 
 @router.get("/employees", response_model=list[EmployeeOut])
 async def get_all_employees():
+    db = get_database()
     employees = await db.users.find({"role": UserRole.EMPLOYEE}).to_list(200)
     return [
         EmployeeOut(
@@ -126,6 +153,7 @@ async def get_all_employees():
 @router.get("/users/{user_id}", response_model=UserOut)
 async def get_user(user_id: str):
     try:
+        db = get_database()
         user = await db.users.find_one({"_id": ObjectId(user_id)})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -141,6 +169,7 @@ async def get_user(user_id: str):
 
 @router.get("/users/email/{email}", response_model=UserOut)
 async def get_user_by_email(email: str):
+    db = get_database()
     user = await db.users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -155,9 +184,10 @@ async def get_user_by_email(email: str):
 @router.patch("/users/{user_id}/role")
 async def update_user_role(user_id: str, role: UserRole):
     try:
+        db = get_database()
         result = await db.users.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"role": role}}
+            {"$set": {"role": role, "updated_at": datetime.utcnow()}}
         )
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="User not found")
@@ -169,6 +199,7 @@ async def update_user_role(user_id: str, role: UserRole):
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str):
     try:
+        db = get_database()
         result = await db.users.delete_one({"_id": ObjectId(user_id)})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="User not found")

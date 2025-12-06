@@ -1,19 +1,23 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_db, close_db
 from app.routers import users
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
-import json
+from dotenv import load_dotenv
 import os
-import base64
-from email.mime.text import MIMEText
-import base64
 
-app = FastAPI()
+# Load environment variables
+load_dotenv()
+
+app = FastAPI(title="User Management API")
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Next.js default port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup():
@@ -23,9 +27,17 @@ async def startup():
 async def shutdown():
     await close_db()
 
-# ==== Routers ====
+# Include routers
 app.include_router(users.router, prefix="/users", tags=["Users"])
+
+# Import and include Gmail router
+from app.routers import gmail
+app.include_router(gmail.router, prefix="/gmail", tags=["Gmail"])
 
 @app.get("/")
 async def root():
-    return {"message": "API running"}
+    return {"message": "API running", "status": "healthy"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}

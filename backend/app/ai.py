@@ -1,33 +1,56 @@
 from bytez import Bytez
 from dotenv import load_dotenv
 import os
-from .base.base_mode import email
+import json
+
 load_dotenv()
 key = os.getenv("BYTEZ_KEY")
 
 sdk = Bytez(key)
 
 
-def brain(email_data: email):
+def brain(prompt: str):
     model = sdk.model("openai/gpt-4.1-mini")
-    
-    # Format the email data into a readable string
-    email_content = f"""
-Sender: {email_data.sender}
-Subject: {email_data.subject}
-Body: {email_data.body}
-"""
 
     resp = model.run([
         {
             "role": "system",
-            "content": "You are a helpful assistant."
+            "content": "You are a helpful assistant. Always respond in valid JSON when requested."
         },
         {
             "role": "user",
-            "content": email_content
+            "content": prompt
         }
     ])
 
-    print(resp)
-    return resp
+    try:
+        if hasattr(resp, 'output'):
+            # If resp has an output attribute
+            content = resp.output.get('content', str(resp.output))
+        elif isinstance(resp, dict):
+            content = resp.get('content', resp.get('output', str(resp)))
+        elif isinstance(resp, list) and len(resp) > 0:
+            content = resp[0].get('content', str(resp[0]))
+        else:
+            content = str(resp)
+        
+        return content
+    except Exception as e:
+        print(f"Error parsing response: {e}")
+        print(f"Response type: {type(resp)}")
+        print(f"Response: {resp}")
+        return str(resp)
+
+
+email = """
+Hello,
+
+We offer bulk SEO packages for only $29/month.
+Grow your business with our promotional services.
+Best regards,
+SEO Boost Team
+"""
+
+print(classification(email))
+
+

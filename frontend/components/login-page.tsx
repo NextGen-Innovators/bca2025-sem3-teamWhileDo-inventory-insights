@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { signIn } from 'next-auth/react';
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,15 +26,10 @@ export default function LoginPage() {
   const handleEmployeeSubmit = () => {
     if (email && email) {
       console.log("Employee login:", email);
-      // Add your employee authentication logic here
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Initiating Google OAuth login");
-    // Add your Google OAuth logic here
-    // Example: window.location.href = '/api/auth/google';
-  };
+ 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center p-4">
@@ -58,7 +53,7 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={handleGoogleLogin}
+                onClick={()=>signIn()}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path
