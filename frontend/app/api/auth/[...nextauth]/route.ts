@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import axios from "axios";
-import { redirect } from "next/navigation";
 
 export const authOptions: any = {
   providers: [
@@ -11,7 +10,7 @@ export const authOptions: any = {
 
       authorization: {
         params: {
-          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
+        scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify",
           access_type: "offline",
           prompt: "consent",
         },

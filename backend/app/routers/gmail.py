@@ -34,7 +34,7 @@ async def read_emails(
         
         service, user = await get_gmail_service(access_token=access_token)
         
-        print(f"📧 Fetching {max_results} emails for: {user['email']}")
+        print(f" Fetching {max_results} emails for: {user['email']}")
         
         results = service.users().messages().list(
             userId="me", 

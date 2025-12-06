@@ -163,7 +163,7 @@ async def get_all_employees():
 async def get_user(user_id: str):
     try:
         db = get_database()
-        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        user = await db.users.find_one({"google_id": user_id})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
