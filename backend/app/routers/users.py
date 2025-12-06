@@ -55,7 +55,7 @@ async def save_token(data: TokenSave):
             result = await db.users.insert_one(user_doc)
             user_id = str(result.inserted_id)
         
-        print(f"✅ Token saved successfully for user: {user_id}")
+        print(f" Token saved successfully for user: {user_id}")
         return {
             "message": "Token saved successfully",
             "user_id": user_id,
@@ -63,10 +63,10 @@ async def save_token(data: TokenSave):
         }
     
     except RuntimeError as e:
-        print(f"❌ Database not initialized: {str(e)}")
+        print(f"Database not initialized: {str(e)}")
         raise HTTPException(status_code=503, detail="Database connection not available")
     except Exception as e:
-        print(f"❌ Error saving token: {str(e)}")
+        print(f"Error saving token: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to save token: {str(e)}")
@@ -165,6 +165,11 @@ async def get_all_employees():
             role=e["role"],
             department=e.get("department"),
             position=e.get("position"),
+            company_id=e.get("company_id"),
+            skills=e.get("skills", []),
+            tags=e.get("tags", []),
+            bio=e.get("bio"),
+            is_onboarded=e.get("is_onboarded", False),
         ) 
         for e in employees
     ]

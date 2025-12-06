@@ -60,7 +60,7 @@ export const authOptions: any = {
 
          
         } catch (error: any) {
-          console.error("❌ Failed to save token to FastAPI:");
+          console.error("Failed to save token to FastAPI:");
           if (error.response) {
             console.error("Status:", error.response.status);
             console.error("Data:", error.response.data);

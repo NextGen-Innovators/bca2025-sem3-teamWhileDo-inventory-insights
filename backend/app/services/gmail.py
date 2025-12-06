@@ -57,12 +57,12 @@ async def get_user_credentials(access_token: str = None):
                     }
                 }
             )
-            print(f"✅ Token refreshed and saved for user: {user['email']}")
+            print(f" Token refreshed and saved for user: {user['email']}")
         
         return creds, user
     
     except Exception as e:
-        print(f"❌ Error getting credentials: {str(e)}")
+        print(f"Error getting credentials: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get credentials: {str(e)}")
 
 async def get_gmail_service(access_token: str = None):

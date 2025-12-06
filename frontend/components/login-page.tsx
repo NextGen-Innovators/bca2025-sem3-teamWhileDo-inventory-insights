@@ -12,15 +12,34 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { signIn } from 'next-auth/react';
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const router = useRouter();
  
 
-  const handleEmployeeSubmit = () => {
-    if (email && email) {
-      console.log("Employee login:", email);
+  const handleEmployeeSubmit = async () => {
+    if (!email) {
+      toast.error("Please enter your email");
+      return;
+    }
+    
+    try {
+      const response = await axios.post(`http://127.0.0.1:8000/auth/employee-login`, { email });
+      if (response.status === 200) {
+        const data = response.data;
+        console.log(data);
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("employee", JSON.stringify(data.employee));
+        router.push("/employee/dashboard");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      const errorMessage = error.response?.data?.detail || "Login failed. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -75,10 +94,10 @@ export default function LoginPage() {
             <TabsContent value="employee" className="space-y-4 mt-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Employee ID</label>
+                  <label className="text-sm font-medium">Email</label>
                   <Input
                     type="text"
-                    placeholder="email"
+                    placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />

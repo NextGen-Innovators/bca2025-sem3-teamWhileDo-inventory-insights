@@ -84,13 +84,13 @@ async def create_company(company_data: CompanyCreate):
         response_data["id"] = company_id
         response_data["website"] = str(response_data["website"]) if response_data.get("website") else None
         
-        print(f"✅ Company created successfully: {company_data.name} ({company_id})")
+        print(f" Company created successfully: {company_data.name} ({company_id})")
         return CompanyOut(**response_data)
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error creating company: {str(e)}")
+        print(f"Error creating company: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(
@@ -127,7 +127,7 @@ async def get_all_companies(
         return result
         
     except Exception as e:
-        print(f"❌ Error fetching companies: {str(e)}")
+        print(f"Error fetching companies: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch companies")
 
 @router.get("/{company_id}", response_model=CompanyOut)
@@ -148,7 +148,7 @@ async def get_company(company_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching company: {str(e)}")
+        print(f"Error fetching company: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid company ID")
 
 @router.get("/email/{email}", response_model=CompanyOut)
@@ -167,7 +167,7 @@ async def get_company_by_email(email: str):
         return CompanyOut(**company)
         
     except Exception as e:
-        print(f"❌ Error fetching company by email: {str(e)}")
+        print(f"Error fetching company by email: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch company")
 
 @router.get("/{company_id}/with-employees", response_model=CompanyWithEmployees)
@@ -209,7 +209,7 @@ async def get_company_with_employees(company_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching company with employees: {str(e)}")
+        print(f"Error fetching company with employees: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid company ID")
 
 @router.put("/{company_id}", response_model=CompanyOut)
@@ -250,13 +250,13 @@ async def update_company(company_id: str, company_data: CompanyUpdate):
         updated_company = await db.companies.find_one({"_id": ObjectId(company_id)})
         updated_company["id"] = str(updated_company["_id"])
         
-        print(f"✅ Company updated successfully: {company_id}")
+        print(f" Company updated successfully: {company_id}")
         return CompanyOut(**updated_company)
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error updating company: {str(e)}")
+        print(f"Error updating company: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid company ID")
 
 @router.patch("/{company_id}/employee-count")
@@ -291,7 +291,7 @@ async def update_employee_count(company_id: str):
         }
         
     except Exception as e:
-        print(f"❌ Error updating employee count: {str(e)}")
+        print(f"Error updating employee count: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid company ID")
 
 @router.delete("/{company_id}")
@@ -324,13 +324,13 @@ async def delete_company(company_id: str, hard_delete: bool = Query(False, descr
             )
             message = "Company deactivated successfully"
         
-        print(f"✅ Company {'deleted' if hard_delete else 'deactivated'}: {company_id}")
+        print(f" Company {'deleted' if hard_delete else 'deactivated'}: {company_id}")
         return {"message": message, "company_id": company_id}
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error deleting company: {str(e)}")
+        print(f"Error deleting company: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid company ID")
 
 @router.get("/user/{user_email}", response_model=CompanyOut)
@@ -362,5 +362,5 @@ async def get_user_company(user_email: str):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching user's company: {str(e)}")
+        print(f"Error fetching user's company: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch company")

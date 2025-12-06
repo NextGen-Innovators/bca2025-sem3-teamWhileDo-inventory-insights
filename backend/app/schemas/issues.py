@@ -49,7 +49,7 @@ class IssueUpdate(BaseModel):
     priority: Optional[IssuePriority] = None
     status: Optional[IssueStatus] = None
     attachments: Optional[List[HttpUrl]] = None
-    assigned_to:str
+    assigned_to: Optional[str] = None
     
 
 

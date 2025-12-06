@@ -15,7 +15,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class EmployeeLoginRequest(BaseModel):
     email: EmailStr
-    password: str
 
 
 class EmployeeLoginResponse(BaseModel):
@@ -55,12 +54,7 @@ def create_access_token(employee_id: str, email: str, name: str, expires_delta: 
 
 @router.post("/employee-login", response_model=EmployeeLoginResponse)
 async def employee_login(credentials: EmployeeLoginRequest):
-    """
-    Employee login endpoint.
-    Returns JWT token and employee details.
-    
-    Note: Password should be hashed in the database for security.
-    """
+ 
     try:
         db = get_database()
         
@@ -76,23 +70,6 @@ async def employee_login(credentials: EmployeeLoginRequest):
                 detail="Invalid email or credentials"
             )
         
-        # Check if password exists and verify it
-        stored_password = employee.get("password")
-        if not stored_password:
-            # If no password set, reject login
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid email or credentials"
-            )
-        
-        # Verify password
-        if not verify_password(credentials.password, stored_password):
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid email or credentials"
-            )
-        
-        # Create access token
         employee_id = str(employee["_id"])
         access_token = create_access_token(
             employee_id=employee_id,
@@ -116,7 +93,7 @@ async def employee_login(credentials: EmployeeLoginRequest):
             "role": employee.get("role")
         }
         
-        print(f"✅ Employee logged in: {credentials.email}")
+        print(f" Employee logged in: {credentials.email}")
         
         return {
             "access_token": access_token,
@@ -127,7 +104,7 @@ async def employee_login(credentials: EmployeeLoginRequest):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error during employee login: {str(e)}")
+        print(f"Error during employee login: {str(e)}")
         raise HTTPException(status_code=500, detail="Login failed")
 
 
@@ -190,5 +167,5 @@ async def get_current_employee(authorization: str = None):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching current employee: {str(e)}")
+        print(f"Error fetching current employee: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch employee details")

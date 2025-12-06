@@ -23,7 +23,7 @@ async def connect_db():
         print(f"🚀 Connected to MongoDB Atlas: {DATABASE_NAME}")
         return db
     except Exception as e:
-        print(f"❌ Failed to connect to MongoDB: {str(e)}")
+        print(f"Failed to connect to MongoDB: {str(e)}")
         raise
 
 async def close_db():
@@ -31,7 +31,7 @@ async def close_db():
     if client:
         print("👋 Closing MongoDB connection...")
         client.close()
-        print("✅ MongoDB connection closed")
+        print(" MongoDB connection closed")
 
 def get_database():
     """Get the database instance"""
