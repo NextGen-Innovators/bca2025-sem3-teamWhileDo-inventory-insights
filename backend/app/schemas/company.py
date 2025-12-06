@@ -124,7 +124,10 @@ class EmployeeCreate(BaseModel):
     role: UserRole = UserRole.EMPLOYEE
     department: Optional[str] = None
     position: Optional[str] = None
-    company_id: str
+    company_id: Optional[str] = None  # Made optional since it might come from context
+    skills: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
+    bio: Optional[str] = None  # Add bio field
 
 class EmployeeOut(BaseModel):
     id: str
@@ -133,7 +136,8 @@ class EmployeeOut(BaseModel):
     role: UserRole
     department: Optional[str] = None
     position: Optional[str] = None
-    company_id: str
+    company_id: Optional[str] = None
+    skills: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
+    bio: Optional[str] = None
     is_onboarded: bool = False
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None

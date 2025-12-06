@@ -4,7 +4,11 @@ from datetime import datetime
 from app.database import get_database
 from app.schemas.user import (
     UserCreate, UserOut, TokenSave, 
-    EmployeeCreate, EmployeeOut, UserRole
+    UserRole
+)
+
+from app.schemas.company import (
+    EmployeeCreate, EmployeeOut
 )
 
 router = APIRouter()
@@ -91,24 +95,32 @@ async def create_user(data: UserCreate):
 @router.post("/employees", response_model=EmployeeOut)
 async def create_employee(data: EmployeeCreate):
     db = get_database()
+    
+    # Check if user already exists
     existing = await db.users.find_one({"email": data.email})
     if existing:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     
-    employee = data.model_dump()
-    employee["created_at"] = datetime.utcnow()
-    employee["updated_at"] = datetime.utcnow()
-    employee["is_onboarded"] = False
-    result = await db.users.insert_one(employee)
+    # Convert to dictionary and add timestamp
+    employee_data = data.model_dump()
+    employee_data["created_at"] = datetime.utcnow()
+    employee_data["updated_at"] = datetime.utcnow()
+    employee_data["is_onboarded"] = False
+    
+    # Insert into database
+    result = await db.users.insert_one(employee_data)
     
     return EmployeeOut(
         id=str(result.inserted_id),
-        name=employee["name"],
-        email=employee["email"],
-        role=employee["role"],
-        department=employee.get("department"),
-        position=employee.get("position"),
-        is_onboarded=employee["is_onboarded"]
+        name=employee_data["name"],
+        email=employee_data["email"],
+        role=employee_data["role"],
+        department=employee_data.get("department"),
+        position=employee_data.get("position"),
+        skills=employee_data.get("skills", []),
+        tags=employee_data.get("tags", []),
+        bio=employee_data.get("bio"),  # Add bio field
+        company_id=employee_data.get("company_id")
     )
 
 @router.get("/users", response_model=list[UserOut])
@@ -154,7 +166,6 @@ async def get_all_employees():
             role=e["role"],
             department=e.get("department"),
             position=e.get("position"),
-            is_onboarded=e.get("is_onboarded", False)
         ) 
         for e in employees
     ]
@@ -172,7 +183,8 @@ async def get_user(user_id: str):
             name=user["name"],
             email=user["email"],
             role=user.get("role", UserRole.USER),
-            is_onboarded=user.get("is_onboarded", False)
+            is_onboarded=user.get("is_onboarded", False),
+            company_id=user.get("company_id"),
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid user ID")

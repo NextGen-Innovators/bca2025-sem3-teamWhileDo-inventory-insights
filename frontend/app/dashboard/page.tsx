@@ -1,11 +1,8 @@
 import React from 'react'
+import DashboardRoot from '@/components/dashboard-root'
 
 const page = () => {
-  return (
-    <div>
-      
-    </div>
-  )
+  return <DashboardRoot />
 }
 
 export default page

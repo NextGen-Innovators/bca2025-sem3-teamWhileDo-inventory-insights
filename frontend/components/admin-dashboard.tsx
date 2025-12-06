@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,9 +12,13 @@ import {
 import { LogOut } from "lucide-react";
 import IssuesList from "./issues-list";
 import AddEmployeeForm from "./add-employee-form";
+import { useSession } from "next-auth/react";
+import { useGetUser } from "@/lib/apis/useUser";
 
 export default function AdminDashboard() {
   const [showAddEmployee, setShowAddEmployee] = useState(false);
+ const { data: session, status } = useSession();
+    const { data: user, isLoading: isLoadingUser } = useGetUser(session?.user?.id || "");
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +67,7 @@ export default function AdminDashboard() {
                   <CardTitle>Add New Employee</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <AddEmployeeForm onClose={() => setShowAddEmployee(false)} />
+                  <AddEmployeeForm companyId={user.company_id || ''} onClose={() => setShowAddEmployee(false) } />
                 </CardContent>
               </Card>
             )}

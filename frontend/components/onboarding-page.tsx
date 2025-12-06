@@ -44,7 +44,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-// Define form schema with Zod
 const formSchema = z.object({
   user_id: z.string(),
   name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -81,16 +80,19 @@ const steps = [
     id: "company",
     title: "Company Info",
     icon: Building,
+    fields: ["name", "email", "industry", "description"],
   },
   {
     id: "location",
     title: "Location",
     icon: MapPin,
+    fields: ["address", "city", "state", "country"],
   },
   {
     id: "contact",
     title: "Contact",
     icon: Contact,
+    fields: ["phone", "website"],
   },
 ];
 
@@ -113,7 +115,6 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize form
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -135,11 +136,11 @@ export default function OnboardingPage() {
   const { mutateAsync: createCompany } = useCreateCompany();
 
   // Redirect if already onboarded
-  useEffect(() => {
-    if (user?.is_onboarded ) {
-      router.push("/dashboard");
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //   if (user?.is_onboarded) {
+  //     router.push("/dashboard");
+  //   }
+  // }, [user, router]);
 
   // Populate form with session data
   useEffect(() => {
@@ -151,43 +152,33 @@ export default function OnboardingPage() {
 
   // Handle form submission
   const onSubmit = async (data: FormData) => {
-    if (currentStep < steps.length - 1) {
-      // Go to next step
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      // Submit form
-      setIsSubmitting(true);
-      try {
-        await createCompany(data);
-        // Success - redirect handled by the mutation
-      } catch (error) {
-        console.error("Error submitting form:", error);
-        alert("Error submitting form. Please try again.");
-      } finally {
-        setIsSubmitting(false);
-      }
+    setIsSubmitting(true);
+    try {
+      // Create company
+      await createCompany(data);
+      // The mutation should handle success redirect
+      // If it doesn't, you can add:
+      // router.push("/dashboard");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Error submitting form. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Handle next step
   const handleNext = async () => {
-    let isValid = false;
+    // Validate current step fields
+    const currentStepFields = steps[currentStep].fields;
+    const isValid = await form.trigger(currentStepFields as any);
     
-    switch (currentStep) {
-      case 0:
-        isValid = await form.trigger(["name", "email", "description"]);
-        break;
-      case 1:
-        isValid = await form.trigger(["address", "city", "country"]);
-        break;
-      case 2:
-        isValid = await form.trigger(["phone", "website"]);
-        break;
-    }
-
     if (isValid) {
       if (currentStep < steps.length - 1) {
         setCurrentStep((prev) => prev + 1);
+      } else {
+        // On the last step, submit the form
+        form.handleSubmit(onSubmit)();
       }
     }
   };
@@ -251,7 +242,6 @@ export default function OnboardingPage() {
                     </div>
                     <div className="hidden md:block">
                       <p className="text-sm font-medium">{step.title}</p>
-                     
                     </div>
                   </div>
                 </StepItem>

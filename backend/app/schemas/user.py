@@ -30,18 +30,5 @@ class UserOut(BaseModel):
     email: EmailStr
     role: UserRole
     is_onboarded: bool
+    company_id: Optional[str] = None
 
-class EmployeeCreate(BaseModel):
-    name: str
-    email: EmailStr
-    role: UserRole = UserRole.EMPLOYEE
-    department: Optional[str] = None
-    position: Optional[str] = None
-
-class EmployeeOut(BaseModel):
-    id: str
-    name: str
-    email: EmailStr
-    role: UserRole
-    department: Optional[str] = None
-    position: Optional[str] = None
