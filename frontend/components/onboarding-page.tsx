@@ -15,16 +15,30 @@ import {
 } from "@/components/ui/card";
 
 export default function OnboardingPage() {
-  const [companyName, setCompanyName] = useState("");
-  const [aboutUs, setAboutUs] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    description: "",
+    industry: "",
+    website: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (companyName && aboutUs) {
-      console.log({
-        name: companyName,
-        about: aboutUs,
-      });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = () => {
+    if (formData.name && formData.email) {
+      console.log(formData);
+      // Handle form submission here
     }
   };
 
@@ -38,32 +52,125 @@ export default function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Company Name</label>
+              <label className="text-sm font-medium">
+                Company Name <span className="text-red-500">*</span>
+              </label>
               <Input
+                name="name"
                 placeholder="Enter your company name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
+                value={formData.name}
+                onChange={handleChange}
               />
             </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">About Us</label>
-              <Textarea
-                placeholder="Tell us about your company"
-                value={aboutUs}
-                onChange={(e) => setAboutUs(e.target.value)}
-                rows={4}
+              <label className="text-sm font-medium">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <Input
+                name="email"
+                type="email"
+                placeholder="company@example.com"
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                name="description"
+                placeholder="Tell us about your company"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Industry</label>
+              <Input
+                name="industry"
+                placeholder="e.g., Technology, Healthcare"
+                value={formData.industry}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Website</label>
+              <Input
+                name="website"
+                type="url"
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Phone</label>
+              <Input
+                name="phone"
+                type="tel"
+                placeholder="+1 (555) 000-0000"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Address</label>
+              <Input
+                name="address"
+                placeholder="Street address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">City</label>
+                <Input
+                  name="city"
+                  placeholder="City"
+                  value={formData.city}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">State</label>
+                <Input
+                  name="state"
+                  placeholder="State"
+                  value={formData.state}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Country</label>
+              <Input
+                name="country"
+                placeholder="Country"
+                value={formData.country}
+                onChange={handleChange}
+              />
+            </div>
+
             <Button
-              type="submit"
+              onClick={handleSubmit}
               className="w-full"
-              disabled={!companyName || !aboutUs}
+              disabled={!formData.name || !formData.email}
             >
               Continue to Dashboard
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>
