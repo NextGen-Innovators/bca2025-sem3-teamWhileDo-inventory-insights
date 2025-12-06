@@ -403,77 +403,6 @@ export default function KanbanBoard() {
   return (
     <div className="space-y-6">
       {/* Employee Info Header */}
-      {employee && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage 
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=random`} 
-                    alt={employee.name}
-                  />
-                  <AvatarFallback>
-                    {getInitials(employee.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-semibold">{employee.name}</h3>
-                  <p className="text-sm text-gray-600">{employee.position} • {employee.department}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {employee.skills.slice(0, 3).map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {employee.skills.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{employee.skills.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <Badge variant="outline" className="text-sm">
-                {issuesData?.count || 0} Total Issues
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Kanban Board */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Issues Kanban Board</CardTitle>
-            <p className="text-sm text-muted-foreground">Click buttons to change status</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <KanbanColumn
-              title="To Do"
-              issues={todoIssues}
-              icon={<Clock className="h-4 w-4" />}
-              colorClass="bg-yellow-100 text-yellow-600"
-            />
-            <KanbanColumn
-              title="In Progress"
-              issues={inProgressIssues}
-              icon={<AlertCircle className="h-4 w-4" />}
-              colorClass="bg-blue-100 text-blue-600"
-            />
-            <KanbanColumn
-              title="Completed"
-              issues={finishedIssues}
-              icon={<CheckCircle className="h-4 w-4" />}
-              colorClass="bg-green-100 text-green-600"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -532,6 +461,40 @@ export default function KanbanBoard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Kanban Board */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Issues Kanban Board</CardTitle>
+            <p className="text-sm text-muted-foreground">Click buttons to change status</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <KanbanColumn
+              title="To Do"
+              issues={todoIssues}
+              icon={<Clock className="h-4 w-4" />}
+              colorClass="bg-yellow-100 text-yellow-600"
+            />
+            <KanbanColumn
+              title="In Progress"
+              issues={inProgressIssues}
+              icon={<AlertCircle className="h-4 w-4" />}
+              colorClass="bg-blue-100 text-blue-600"
+            />
+            <KanbanColumn
+              title="Completed"
+              issues={finishedIssues}
+              icon={<CheckCircle className="h-4 w-4" />}
+              colorClass="bg-green-100 text-green-600"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+    
     </div>
   );
 }

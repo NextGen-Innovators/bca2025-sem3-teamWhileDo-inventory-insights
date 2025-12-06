@@ -63,7 +63,7 @@ export default function EmailsList() {
   const totalPages = Math.ceil(totalEmails / itemsPerPage);
   
   const getClassificationColor = (classification: string) => {
-    switch (classification.toLowerCase()) {
+    switch (classification?.toLowerCase()) {
       case "ticket":
         return "bg-blue-100 text-blue-800";
       case "general":
@@ -78,7 +78,7 @@ export default function EmailsList() {
   };
   
   const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
+    switch (category?.toLowerCase()) {
       case "technical":
         return "bg-orange-100 text-orange-800";
       case "billing":
@@ -197,13 +197,13 @@ export default function EmailsList() {
                     
                     <div className="flex flex-col items-end gap-2 ml-4">
                       <div className="flex items-center gap-2">
-                        <Badge className={getClassificationColor(email.classification.classification)}>
-                          {email.classification.classification}
+                        <Badge className={getClassificationColor(email?.classification?.classification)}>
+                          {email?.classification?.classification}
                         </Badge>
-                        <Badge className={getCategoryColor(email.ticket_category.category)}>
+                        <Badge className={getCategoryColor(email?.ticket_category?.category)}>
                           <Tag className="h-3 w-3 mr-1" />
-                          {email.ticket_category.category}
-                          {email.ticket_category.is_new_category && (
+                          {email?.ticket_category?.category}
+                          {email?.ticket_category?.is_new_category && (
                             <span className="ml-1 text-xs">(New)</span>
                           )}
                         </Badge>

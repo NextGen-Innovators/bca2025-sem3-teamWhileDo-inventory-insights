@@ -52,13 +52,13 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Issues Section */}
-          <div className="lg:col-span-2">
+          <div className="w-6xl mx-auto">
             <IssuesList />
+          <EmailsList /> {/* Add this component */}
           </div>
 
           {/* Sidebar */}
           <div>
-          <EmailsList /> {/* Add this component */}
 
             {/* You can add more sidebar components here */}
           </div>
