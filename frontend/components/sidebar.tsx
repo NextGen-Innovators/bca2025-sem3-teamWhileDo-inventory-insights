@@ -121,6 +121,7 @@ export function AppSidebar() {
             >
               <X className="h-4 w-4" />
             </Button>
+            <h2 className="text-3xl font-bold">TicketForge</h2>
           </div>
           
           {/* Search Bar */}
