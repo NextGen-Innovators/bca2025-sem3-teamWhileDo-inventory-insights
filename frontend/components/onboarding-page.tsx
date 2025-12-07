@@ -136,11 +136,11 @@ export default function OnboardingPage() {
   const { mutateAsync: createCompany } = useCreateCompany();
 
   // Redirect if already onboarded
-  // useEffect(() => {
-  //   if (user?.is_onboarded) {
-  //     router.push("/dashboard");
-  //   }
-  // }, [user, router]);
+  useEffect(() => {
+    if (user?.is_onboarded) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   // Populate form with session data
   useEffect(() => {

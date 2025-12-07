@@ -7,7 +7,7 @@ import { Mail, ExternalLink, User, Clock, Tag, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 import { useGetUser } from "@/lib/apis/useUser";
-import { useGetEmails } from "@/lib/apis/useEmails";
+import { useGetEmails, useReadEmails } from "@/lib/apis/useEmails";
 import { useState } from "react";
 
 interface EmailData {
@@ -47,7 +47,6 @@ interface EmailsResponse {
 export default function EmailsList() {
   const { data: session, status } = useSession();
   const { data: user, isLoading: isLoadingUser } = useGetUser(session?.user?.id || "");
-  
   // State for pagination
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
@@ -57,7 +56,8 @@ export default function EmailsList() {
     session?.access_token || "",
     user?.company_id || ""
   ) as { data: EmailsResponse; isLoading: boolean; error: any };
-  
+  const { data: assignedEmails, isLoading: loadingEmail } =   useReadEmails(session?.user?.id || "", user?.company_id || "");
+  console.log(assignedEmails)
   const emails = emailsData?.messages || [];
   const totalEmails = emailsData?.count || 0;
   const totalPages = Math.ceil(totalEmails / itemsPerPage);

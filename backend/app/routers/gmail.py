@@ -300,7 +300,7 @@ async def read_emails(
                             response_result.get("body")
                         )
                         parsed["draft_id"] = draft_id
-                        
+                        await mark_email_as_read(service, parsed["id"])
                         await db.emails.insert_one({
                             "email_id": parsed["id"],
                             "sender": parsed['from'],
@@ -487,3 +487,61 @@ async def send_email(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
+
+@router.get("/email-tasks")
+async def get_all_email_tasks(
+    company_id: str = Query(..., description="Company ID to filter emails"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    classification: Optional[str] = Query(None, description="Filter by classification (inquiry, ticket)"),
+    assigned_to: Optional[str] = Query(None, description="Filter by assigned employee ID"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(50, ge=1, le=200, description="Number of records to return"),
+):
+    """
+    Get all email tasks from the database for a specific company
+    """
+    try:
+        db = get_database()
+        
+        # Build query filter
+        query_filter = {"company_id": company_id}
+        
+        if status:
+            query_filter["status"] = status
+        if classification:
+            query_filter["classification"] = classification
+        if assigned_to:
+            query_filter["assigned_to"] = assigned_to
+        
+        # Get total count
+        total_count = await db.emails.count_documents(query_filter)
+        
+        # Get emails with pagination, sorted by processed_at descending (most recent first)
+        emails = await db.emails.find(query_filter).sort("processed_at", -1).skip(skip).limit(limit).to_list(length=limit)
+        
+        # Convert ObjectId to string and create JSON-serializable dicts
+        result = []
+        for email in emails:
+            email_dict = dict(email)  # Create a copy to avoid modifying original
+            if "_id" in email_dict:
+                email_dict["id"] = str(email_dict["_id"])
+                del email_dict["_id"]  # Remove _id to avoid duplication
+            
+            result.append(email_dict)
+        
+        return {
+            "emails": result,
+            "total": total_count,
+            "skip": skip,
+            "limit": limit,
+            "count": len(result)
+        }
+        
+    except Exception as e:
+        print(f"Error fetching email tasks: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch email tasks: {str(e)}")
+
+        

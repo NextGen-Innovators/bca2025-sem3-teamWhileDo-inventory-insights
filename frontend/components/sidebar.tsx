@@ -38,7 +38,6 @@ export function AppSidebar() {
       title: "Employees",
       icon: Users,
       page: "/employees",
-      badge: "24",
     },
     {
       title: "Create Employee",
@@ -49,7 +48,6 @@ export function AppSidebar() {
       title: "Issues",
       icon: AlertCircle,
       page: "/issues",
-      badge: "3",
     },
     {
       title: "Settings",
@@ -115,7 +113,6 @@ export function AppSidebar() {
         {/* Sidebar Header */}
         <div className="border-b p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">HR Portal</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -162,11 +159,7 @@ export function AppSidebar() {
                       <item.icon className={`h-4 w-4 mr-3 ${isActive ? 'text-blue-700' : 'text-gray-600'}`} />
                       <span>{item.title}</span>
                     </div>
-                    {item.badge && (
-                      <Badge variant="secondary" className="ml-2">
-                        {item.badge}
-                      </Badge>
-                    )}
+                   
                   </button>
                 );
               })}

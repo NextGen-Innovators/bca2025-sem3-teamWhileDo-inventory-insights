@@ -15,6 +15,7 @@ import EmailsList from "./EmailsList"; // Add this import
 import AddEmployeeForm from "./add-employee-form";
 import { signOut, useSession } from "next-auth/react";
 import { useGetUser } from "@/lib/apis/useUser";
+import SolvedEmails from "./SolvedEmails";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -54,7 +55,8 @@ export default function AdminDashboard() {
           {/* Issues Section */}
           <div className="w-6xl mx-auto">
             <IssuesList />
-          <EmailsList /> {/* Add this component */}
+          <EmailsList /> 
+          <SolvedEmails/>
           </div>
 
           {/* Sidebar */}
